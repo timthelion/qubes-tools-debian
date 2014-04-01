@@ -1,0 +1,110 @@
+#!/usr/bin/python
+import os,sys,subprocess
+
+########################################################
+
+def printHelp():
+ print("""
+
+# qubes-tools install [OPTIONS] USERNAME PATH_TO_DEBS
+
+This script will setup and install the qubes gui utilites into a debian HVM. It must be run as root.  It will setup the utilites for a specific user.  This user name must be specified at the command line.
+
+Options:
+ --setup-network Prompt for the IP address and gateway and automatically setup networking in this vm.
+ --help Display this message.
+ """)
+
+# If --setup-network then setup networking
+# prompt for
+# IP
+# Netmask
+# gateway
+# from the VMs settings dialog
+def setupNetwork():
+ print("Please enter the settings for your network.  You can find them in the settings dialog for this VM, which can be launched from the Qubes VM Manger.")
+ address = raw_input("IP:")
+ netmask = raw_input("Netmask:")
+ gateway = raw_input("Gateway:")
+ firstThree,_,_ = address.rpartition(".")
+#write
+ etc_network_interfaces = """
+# This file describes the network interfaces available on your system
+# and how to activate them. For more information, see interfaces(5).
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# The primary network interface
+allow-hotplug eth0
+iface eth0 inet static
+ address """ + address + """
+ netmask """ + netmask + """
+ network """ + firstThree + ".0" + """
+ broadcast """ + firstThree + ".255" + """
+ gateway """ + gateway + """
+ # dns-* options are implemented by the resolveconf package, if installeed
+ dns-nameservers """ + gateway
+ with open("/etc/network/interfaces","w") as interfacesF:
+  interfacesF.write(etc_network_interfaces)
+ subprocess.call(["ifdown","eth0"])
+ subprocess.call(["ifup","eth0"])
+
+# append "xen /proc/xen xenfs defaults 0 0" to /etc/fstab
+#
+def setupFstab():
+ with open("/etc/fstab","a") as fstabF:
+  fstabF.write("xen /proc/xen xenfs defaults 0 0")
+ subprocess.call(["mount","xen"])
+
+# If you ran the debian installer from the netinstall iso, you probably set the username to be your name.
+# If the user is named something other than "user", symlink /home/user to /home/$USER
+def setupUser():
+ if not username == "user":
+  print("Setting up symlinks to home directory.")
+  if not os.path.exists "/home/user":
+   os.symlink("/home/"+username,"/home/user")
+  else:
+   print("It seams that /home/user already exists, skipping this step.")
+
+# Add NOPASSWD to the sudoers file.
+def setupSudo():
+ subprocess.call(["apt-get","install","-qqy","sudo"])
+ with open("/etc/sudoers","a") as sudoersF:
+  sudoersF.write(username+" ALL=NOPASSWD:ALL")
+ 
+def getUserName():
+ for arg in sys.argv:
+  if not arg.startswith("-"):
+   return arg
+
+#######################################################
+
+if os.geteuid() != 0:
+ sys.exit("This script must be run as root.")
+
+if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv or "help" in sys.argv:
+ printHelp()
+ sys.exit()
+
+if "--setup-network" in sys.argv:
+ setupNetwork()
+
+setupFstab()
+
+username = getUserName() 
+
+setupUser()
+
+setupSudo()
+
+installDebs()
+
+print("""Setup complete!
+
+Please run:
+
+$ qvm-prefs -s <vmname> qrexec_installed True
+
+in dom0, replacing <vmname> with the name of this VM""")

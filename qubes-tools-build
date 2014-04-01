@@ -1,0 +1,94 @@
+#!/usr/bin/python
+import os,sys,subprocess,time
+
+def printHelp():
+ print("""
+
+#qubes-tools-build [OPTIONS]
+
+This is a tool to build the .deb packages required by qubes-tools-install.  In order to install the qubes vmside utilities in debian, you should first run qubes-tools-build in an AppVM, you will now have an .iso file which you can use in dom0 as follows:
+
+$ qvm-start debian-hvm --cdrom=debian-qubes-tools-build-vm:/home/user/qubes-tools-debian/qubes-tools-debian.iso
+
+Options
+
+ --help Print this message.
+ --docker-installed If you are running this script on a machine that has docker installed and running, use this flag to use the pre-existing docker instance!
+ --on-debian Normally this script runs itself inside docker, if you are already on a debian system, you can install the programs listed in the docker file(found in the debian-qubes-tools-build directory) and you can pass it the --on-debian flag to make it run directly.
+
+Options that can be passed along to git-builder
+
+ --git-ignore-new
+""")
+
+if "--help" in sys.argv or "-h" in sys.argv or "help" in sys.argv:
+ printHelp()
+ sys.exit()
+
+if not os.geteuid() == 0:
+ sys.exit("This script must be run as root.")
+
+docker_installed= "--docker-installed" in sys.argv
+if "--git-ignore-new" in sys.argv:
+ git_ignore_new = ["--git-ignore-new"]
+else:
+ git_ignore_new = []
+
+if not "--on-debian" in sys.argv:
+ print("Not running debian? No problem,")
+ if not os.path.exists("./docker") and not docker_installed:
+  print("Downloading docker now.")
+  subprocess.call(["wget","https://get.docker.io/builds/Linux/x86_64/docker-latest","-O","docker"])
+  subprocess.call(["chmod","+x","docker"])
+ if not docker_installed:
+  docker_deamon = subprocess.Popen(["./docker","-d","--graph=./docker-data"])
+  print("Waiting for the docker deamon to come up...")
+  time.sleep(6)
+  print("Should be up by now...")
+ if not docker_installed:
+  docker_path = "./docker"
+ else:
+  docker_path = "docker"
+ subprocess.call([docker_path,"build","-t=debian-qubes-tools-build","debian-qubes-tools-build"])
+ subprocess.call([docker_path,"run","-v=./:/qubes/","-w=/qubes/","--rm","debian-qubes-tools-build","./qubes-tools-build","--on-debian"]+git_ignore_new)
+ docker_deamon.terminate()
+ sys.exit()
+
+print("Importing Davith's GPG key.")
+subprocess.call(["gpg","--import","davith-qubes-debian-key.asc"])
+
+def cloneRepo(repoURL):
+ subprocess.call(["git","clone",repoURL])
+
+repos = ["qubes-core-vchan-xen","qubes-linux-kernel","qubes-linux-utils","qubes-core-agent-linux","qubes-gui-common"]
+
+cwd = os.getcwd()
+sources_dir=os.path.join(cwd,"sources")
+if not os.path.exists(sources_dir):
+ os.mkdir(sources_dir)
+os.chdir(sources_dir)
+for repo in repos:
+ if not os.path.exists("./"+repo):
+  cloneRepo("http://dsg.is/qubes/"+repo+".git")
+
+for repo in repos:
+ os.chdir(os.path.join(cwd,"sources",repo))
+ subprocess.call(["git","checkout","-b","upstream","remotes/origin/upstream"])
+ subprocess.call(["git","checkout","master"])
+ subprocess.call(["git-buildpackage","--git-upstream-tag=v%(version)s","-us","-uc"]+git_ignore_new)
+
+# Create an ISO containing the newly built deb files.
+os.chdir(cwd)
+debfiles = []
+for f in os.listdir(cwd):
+ if f.endswith(".deb"):
+  debfiles.append("sources/"+f)
+subprocess.call(["genisoimage","-o","qubes-tools-debian.iso","qubes-tools-install"]+debfiles)
+
+print("""Build complete!
+
+You can now install these tools by booting your debian HVM with:
+
+$ qvm-start debian-hvm --cdrom=debian-qubes-tools-build-vm:/path/to/qubes-tools-debian.iso
+
+Once loaded, you can mount the iso image and run the `qubes-tools-install` script.""")
