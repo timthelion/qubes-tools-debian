@@ -91,7 +91,7 @@ for repo in repos:
 
 # Create an ISO containing the newly built deb files.
 os.chdir(cwd)
-subprocess.call(["genisoimage","-o","qubes-tools-debian.iso","qubes-tools-install"]+debfiles)
+subprocess.call(["genisoimage","-iso-level","4","-o","qubes-tools-debian.iso","qubes-tools-install"]+debfiles)
 
 print("""Build complete!
 
