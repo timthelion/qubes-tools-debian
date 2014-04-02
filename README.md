@@ -5,19 +5,6 @@ These scripts can be used to build and install the debian tools for running a de
 
 These packages were prepaired by [Davíð Steinn Geirsson](http://www.dsg.is/qubes/), but the tools themselves were mostly written by the Qubes team.  Thanks to both!
 
-Installing the debian qubes-tools
-=================================
-
-1. Clone this repository into an AppVM.
-
-2. Install debian into an HVM, setting the default user to be named user.
-
-3. Start the debian hvm with the following command in dom0:
-
-    $ qvm-start debian-hvm --cdrom=debian-qubes-tools-build-vm:/path/to/qubes-tools-debian.iso
-
-4. Mount the iso image, cd into it, and run the `qubes-tools-install` script.
-
 Building the debian qubes-tools
 ===============================
 
@@ -32,6 +19,19 @@ Building the debian qubes-tools
 **Note3:** This command will clone several git repositories into a subdirectory named `sources` you must manually update these repositories with `git pull` if you want to rebuild the iso with updated code.
 
 **Note4:** If you edit the source code in the `sources` directories, then you may have to pass the `qubes-tools-build` command the `--git-ignore-new` option in order to get it to build sucessfully.
+
+Installing the debian qubes-tools
+=================================
+
+1. Build these tools in an AppVM.
+
+2. Install debian into an HVM, setting the default user to be named user.
+
+3. Start the debian hvm with the following command in dom0:
+
+    $ qvm-start debian-hvm --cdrom=debian-qubes-tools-build-vm:/path/to/qubes-tools-debian.iso
+
+4. Mount the iso image, cd into it, and run the `qubes-tools-install` script.
 
 Copyright
 =========
