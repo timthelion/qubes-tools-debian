@@ -29,9 +29,17 @@ Installing the debian qubes-tools
 
 3. Start the debian hvm with the following command in dom0:
 
+    ````
     $ qvm-start debian-hvm --cdrom=debian-qubes-tools-build-vm:/path/to/qubes-tools-debian.iso
+    ````
 
 4. Mount the iso image, cd into it, and run the `qubes-tools-install` script.
+
+    ````
+    # mount /dev/cdrom /mnt
+    # cd /mnt
+    # ./qubes-tools-install
+    ```` 
 
 Copyright
 =========
