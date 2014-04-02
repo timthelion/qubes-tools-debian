@@ -6,9 +6,9 @@ import os,sys,subprocess
 def printHelp():
  print("""
 
-# qubes-tools install [OPTIONS] USERNAME PATH_TO_DEBS
+# qubes-tools install [OPTIONS]
 
-This script will setup and install the qubes gui utilites into a debian HVM. It must be run as root.  It will setup the utilites for a specific user.  This user name must be specified at the command line.
+This script will setup and install the qubes gui utilites into a debian HVM. It must be run as root.
 
 Options:
  --setup-network Prompt for the IP address and gateway and automatically setup networking in this vm.
@@ -61,30 +61,41 @@ def setupFstab():
 # If you ran the debian installer from the netinstall iso, you probably set the username to be your name.
 # If the user is named something other than "user", symlink /home/user to /home/$USER
 def setupUser():
- if not username == "user":
+ """ Returns the name of the user to be used. """
+ if not os.path.exists("/home/user"):
   print("Setting up symlinks to home directory.")
-  if not os.path.exists "/home/user":
-   os.symlink("/home/"+username,"/home/user")
+  user_homes = os.listdir("/home")
+  if len(user_homes) == 1:
+   os.symlink(os.path.join("/home/",user_homes[0]),"/home/user")
+   print("Done setting up symlinks.")
+   return user_homes[0]
+  elif len(user_homes) == 0:
+   raw_input("It seems you have no users on your system.  Please create a user named user and press ENTER to continue.")
   else:
-   print("It seams that /home/user already exists, skipping this step.")
-
+   raw_input("It seems you have more than one users on your system, but none of them are named user.  Please create a user named user and press ENTER to continue.")
+ return "user"
+   
 # Add NOPASSWD to the sudoers file.
 def setupSudo():
+ print("Setting up sudo with NOPASSWD.")
  subprocess.call(["apt-get","install","-qqy","sudo"])
  with open("/etc/sudoers","a") as sudoersF:
   sudoersF.write(username+" ALL=NOPASSWD:ALL")
- 
-def getUserName():
- for arg in sys.argv:
-  if not arg.startswith("-"):
-   return arg
+ print("Done setting up sudo.")
 
+def installDebs():
+ print("Installing deb files.")
+ for f in os.listdir(os.getcwd()):
+  if f.endswith(".deb"):
+   subprocess.call(["dpkg","-i",f])
+   subprocess.call(["apt-get","-fy","install"])
+ 
 #######################################################
 
 if os.geteuid() != 0:
  sys.exit("This script must be run as root.")
 
-if len(sys.argv) == 1 or "--help" in sys.argv or "-h" in sys.argv or "help" in sys.argv:
+if "--help" in sys.argv or "-h" in sys.argv or "help" in sys.argv:
  printHelp()
  sys.exit()
 
@@ -93,9 +104,7 @@ if "--setup-network" in sys.argv:
 
 setupFstab()
 
-username = getUserName() 
-
-setupUser()
+username = setupUser()
 
 setupSudo()
 
