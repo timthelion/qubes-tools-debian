@@ -41,17 +41,21 @@ if not "--on-debian" in sys.argv:
   subprocess.call(["wget","https://get.docker.io/builds/Linux/x86_64/docker-latest","-O","docker"])
   subprocess.call(["chmod","+x","docker"])
  if not docker_installed:
-  docker_deamon = subprocess.Popen(["./docker","-d","--graph=./docker-data"])
+  docker_deamon = subprocess.Popen(["./docker","-d","--graph=./docker-data"],stderr=subprocess.PIPE)
   print("Waiting for the docker deamon to come up...")
   time.sleep(6)
   print("Should be up by now...")
- if not docker_installed:
   docker_path = "./docker"
  else:
   docker_path = "docker"
+
  subprocess.call([docker_path,"build","-t=debian-qubes-tools-build","debian-qubes-tools-build"])
  subprocess.call([docker_path,"run","-v=./:/qubes/","-w=/qubes/","--rm","debian-qubes-tools-build","./qubes-tools-build","--on-debian"]+git_ignore_new)
- docker_deamon.terminate()
+ if os.fork() == 0:
+  with open("./docker.log","w") as docker_log:
+   docker_log.write(docker_deamon.stderr.read())
+ else:
+  docker_deamon.terminate()
  sys.exit()
 
 print("Importing Davith's GPG key.")
@@ -68,21 +72,25 @@ if not os.path.exists(sources_dir):
  os.mkdir(sources_dir)
 os.chdir(sources_dir)
 for repo in repos:
- if not os.path.exists("./"+repo):
+ if not os.path.exists(os.path.join(sources_dir,repo)):
   cloneRepo("http://dsg.is/qubes/"+repo+".git")
 
+debfiles = []
 for repo in repos:
  os.chdir(os.path.join(cwd,"sources",repo))
  subprocess.call(["git","checkout","-b","upstream","remotes/origin/upstream"])
  subprocess.call(["git","checkout","master"])
- subprocess.call(["git-buildpackage","--git-upstream-tag=v%(version)s","-us","-uc"]+git_ignore_new)
+ if not subprocess.call(["git-buildpackage","--git-upstream-tag=v%(version)s","-us","-uc"]+git_ignore_new) == 0:
+  sys.exit("Building "+repo+" failed.")
+ for f in os.listdir(os.path.join(cwd,"sources/")):
+  if f.endswith(".deb"):
+   debfile = "sources/"+f
+   if not debfile in debfiles:
+    debfiles.append(debfile)
+    subprocess.call(["dpkg","-i","/qubes/"+debfile])
 
 # Create an ISO containing the newly built deb files.
 os.chdir(cwd)
-debfiles = []
-for f in os.listdir(cwd):
- if f.endswith(".deb"):
-  debfiles.append("sources/"+f)
 subprocess.call(["genisoimage","-o","qubes-tools-debian.iso","qubes-tools-install"]+debfiles)
 
 print("""Build complete!
