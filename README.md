@@ -1,3 +1,10 @@
+Debian Qubes tools
+==========================
+
+These scripts can be used to build and install the debian tools for running a debian HVM as guest on qubes.
+
+These packages were prepaired by [Davíð Steinn Geirsson](http://www.dsg.is/qubes/), but the tools themselves were mostly written by the Qubes team.  Thanks to both!
+
 Installing the debian qubes-tools
 =================================
 
@@ -25,3 +32,8 @@ Building the debian qubes-tools
 **Note3:** This command will clone several git repositories into a subdirectory named `sources` you must manually update these repositories with `git pull` if you want to rebuild the iso with updated code.
 
 **Note4:** If you edit the source code in the `sources` directories, then you may have to pass the `qubes-tools-build` command the `--git-ignore-new` option in order to get it to build sucessfully.
+
+Copyright
+=========
+
+The souce code found in this repository is released under the GPLv2 license.  The sourcecode for the binaries found in the .iso image can be downloaded by running the `qubes-tools-build` script, and is also GPLv2.
