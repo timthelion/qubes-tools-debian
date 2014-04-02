@@ -76,6 +76,7 @@ for repo in repos:
   cloneRepo("http://dsg.is/qubes/"+repo+".git")
 
 debfiles = []
+deb_file_number = 0
 for repo in repos:
  os.chdir(os.path.join(cwd,"sources",repo))
  subprocess.call(["git","checkout","-b","upstream","remotes/origin/upstream"])
@@ -86,6 +87,10 @@ for repo in repos:
   if f.endswith(".deb"):
    debfile = "sources/"+f
    if not debfile in debfiles:
+    debfile_ = "sources/" + str(deb_file_number) + "-" + f
+    os.rename(cwd+"/"+debfile,cwd+"/"+debfile_)
+    deb_file_number = deb_file_number + 1
+    debfile = debfile_
     debfiles.append(debfile)
     subprocess.call(["dpkg","-i","/qubes/"+debfile])
 

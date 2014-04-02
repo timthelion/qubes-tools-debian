@@ -12,7 +12,7 @@ Building the debian qubes-tools
 
 2. Run the `qubes-tools-build` command.
 
-**Note1:** This command will take a long time(45 minutes) the first time it is run.  Following times it takes just a few secconds.
+**Note1:** This command will take a long time(45 minutes) the first time it is run.  Following times it is much faster(though still frustratingly slow).
 
 **Note2:** It may fail the first time you run it,  try repeating the command if it fails to create an iso image.
 
@@ -25,7 +25,7 @@ Installing the debian qubes-tools
 
 1. Build these tools in an AppVM.
 
-2. Install debian into an HVM, setting the default user to be named user.
+2. Install debian into an HVM, setting the default user to be named user. Be careful to make sure that it is the 64bit installation!
 
 3. Start the debian hvm with the following command in dom0:
 

@@ -55,7 +55,7 @@ iface eth0 inet static
 #
 def setupFstab():
  with open("/etc/fstab","a") as fstabF:
-  fstabF.write("xen /proc/xen xenfs defaults 0 0")
+  fstabF.write("\nxen /proc/xen xenfs defaults 0 0\n")
  subprocess.call(["mount","xen"])
 
 # If you ran the debian installer from the netinstall iso, you probably set the username to be your name.
@@ -80,15 +80,18 @@ def setupSudo():
  print("Setting up sudo with NOPASSWD.")
  subprocess.call(["apt-get","install","-qqy","sudo"])
  with open("/etc/sudoers","a") as sudoersF:
-  sudoersF.write(username+" ALL=NOPASSWD:ALL")
+  sudoersF.write("\n"+username+" ALL=NOPASSWD:ALL\n")
  print("Done setting up sudo.")
 
 def installDebs():
  print("Installing deb files.")
- for f in os.listdir(os.getcwd()):
+ files = os.listdir(os.getcwd())
+ files.sort()
+ for f in files:
   if f.endswith(".deb"):
    subprocess.call(["dpkg","-i",f])
-   subprocess.call(["apt-get","-fy","install"])
+   if not subprocess.call(["apt-get","-fy","install"]) == 0:
+    sys.exit("Instalation failed.")
  
 #######################################################
 
@@ -116,4 +119,8 @@ Please run:
 
 $ qvm-prefs -s <vmname> qrexec_installed True
 
-in dom0, replacing <vmname> with the name of this VM""")
+in dom0, replacing <vmname> with the name of this VM
+
+and reboot the HVM.
+
+""")
