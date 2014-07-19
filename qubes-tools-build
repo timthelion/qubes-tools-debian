@@ -50,7 +50,7 @@ if not "--on-debian" in sys.argv:
   docker_path = "docker"
 
  subprocess.call([docker_path,"build","-t=debian-qubes-tools-build","debian-qubes-tools-build"])
- subprocess.call([docker_path,"run","-v=./:/qubes/","-w=/qubes/","--rm","debian-qubes-tools-build","./qubes-tools-build","--on-debian"]+git_ignore_new)
+ subprocess.call([docker_path,"run","-v="+os.getcwd()+":/qubes/","-w=/qubes/","--rm","debian-qubes-tools-build","./qubes-tools-build","--on-debian"]+git_ignore_new)
  if os.fork() == 0:
   with open("./docker.log","w") as docker_log:
    docker_log.write(docker_deamon.stderr.read())
