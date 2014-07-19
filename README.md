@@ -1,6 +1,8 @@
 Debian Qubes tools
 ==========================
 
+**NOTE:** This old build script is relatively untested and never got you a working integrated debian AppVM template on Qubes.  Hopefully in the future you will be able to download one from templates-comunity.  See: http://theinvisiblethings.blogspot.cz/2014/04/qubes-os-r2-rc1-has-been-released.html
+
 These scripts can be used to build and install the debian tools for running a debian HVM as guest on qubes.
 
 These packages were prepaired by [Davíð Steinn Geirsson](http://www.dsg.is/qubes/), but the tools themselves were mostly written by the Qubes team.  Thanks to both!
